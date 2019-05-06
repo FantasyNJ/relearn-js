@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    // 简易实现
+    class Promise {
+        callbacks = []
+        state = 'pending'
+        // 保存结果
+        value = null
+        constructor(fn) {
+            fn(this._resolve.bind(this))
+        }
+        // onFulfilled: then注册的函数
+        then(onFulfilled) {
+            return new Promise((resolve) => {
+                this._handle({
+                    onFulfilled: onFulfilled || null,
+                    resolve
+                })
+            })
+        }
+        _handle(callback){
+            if (this.state === 'pending') {
+                this.callbacks.push(callback)
+                return
+            }
+
+            // 已经变成fulfilled或者rejected，立即执行
+            // 如果then中没有参数（function）,防止链式调用断掉
+            if (!callback.onFulfilled) {
+                callback.resolve(this.value)
+                return
+            }
+
+            // 执行then注册的fn，并接受返回值
+            let ret = callback.onFulfilled(this.value)
+            console.log(ret, 'retretretretretretret')
+            // 链式调用，调用紧跟着的then注册的fn
+            callback.resolve(ret)
+        }
+        _resolve(value) {
+
+            if (value && (typeof value === 'object' || typeof value === 'function')) {
+
+            }
+            // 将状态置为fulfilled。当增加完状态之后，原先的_resolve中的定时器可以去掉了。当reolve同步执行时，虽然callbacks为空，回调函数还没有注册上来，但没有关系，因为后面注册上来时，判断状态为fulfilled，会立即执行回调。
+            this.state = 'fulfilled'
+            this.value = value
+            this.callbacks.forEach(callback => this._handle(callback))
+        }
+    }
+
+    // 实例
+    let p = new Promise(resolve => {
+        resolve(123)
+    }).then(data => {
+        console.log(data, 'then1')
+        // return 234
+    }).then().then(data => {
+        console.log(data, 'then2')
+        return 345
+    })
+
+    setTimeout(() => {
+        p.then(data => {
+            console.log(data, 'then3')
+            return 456
+        })
+    })
+
+    setTimeout(() => {
+        p.then(data => {
+            console.log(data, 'then4')
+        })
+    }, 5000)
+
+</script>
+</body>
+</html>
