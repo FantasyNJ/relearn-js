@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    // 简易实现
+    class Promise {
+        callbacks = []
+        constructor(fn) {
+            fn(this._resolve.bind(this))
+        }
+        // onFulfilled: then注册的函数
+        then(onFulfilled) {
+            this.callbacks.push(onFulfilled)
+            // 短短一行 实现链式调用
+            return this
+        }
+        _resolve(value) {
+            // 引入延迟机制，防止resolve同步执行导致then没有注册而不执行
+            setTimeout(() => {
+                this.callbacks.forEach(fn => fn(value))
+            })
+        }
+    }
+
+    // 实例
+    let p = new Promise(resolve => {
+        // setTimeout(() => {
+            resolve(123)
+        // }, 1000)
+    }).then(data => {
+        console.log(data, 'then1')
+        return 234
+    }).then(data => {
+        console.log(data, 'then2')
+    })
+
+    setTimeout(() => {
+        p.then(data => {
+            console.log(data, 'then3')
+        })
+    })
+
+</script>
+</body>
+</html>
