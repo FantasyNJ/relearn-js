@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    // 简易实现
+    class Promise {
+        callbacks = []
+        state = 'pending'
+        // 保存结果
+        value = null
+        constructor(fn) {
+            fn(this._resolve.bind(this), this._reject.bind(this))
+        }
+        catch(onCatch) {
+            // catch时，走reject。没有return，走到这就结束
+            console.log('Promise:catch')
+            this.then(null, onCatch)
+        }
+        finally(onFinally) {
+            // finally时，无论resolve还是reject都走同一个函数。没有return，走到这就结束
+            console.log('Promise:finally')
+            this.then(onFinally, onFinally)
+        }
+        // onFulfilled: then注册的函数
+        then(onFulfilled, onRejected) {
+            return new Promise((resolve, reject) => {
+                this._handle({
+                    onFulfilled: onFulfilled || null,
+                    onRejected: onRejected || null,
+                    resolve,
+                    reject
+                })
+            })
+        }
+        _handle(callback){
+            if (this.state === 'pending') {
+                this.callbacks.push(callback)
+                return
+            }
+
+            let cb = this.state === 'fulfilled' ? callback.onFulfilled : callback.onRejected
+
+            // 已经变成fulfilled或者rejected，立即执行
+            // 如果then中没有参数（function）,防止链式调用断掉
+            if (!cb) {
+                cb = this.state === 'fulfilled' ? callback.resolve : callback.reject
+                cb(this.value)
+                return
+            }
+
+            let ret
+            // 异常处理
+            try {
+                // 执行then注册的fn，并接受返回值
+                ret = cb(this.value)
+                // 链式调用，调用紧跟着的then注册的fn
+                cb = this.state === 'fulfilled' ? callback.resolve : callback.reject
+            } catch (e) {
+                ret = e
+                cb = callback.reject
+            } finally {
+                cb(ret)
+            }
+        }
+        _resolve(value) {
+            // 判断value是否是Promise instance。等待Promise instance执行完后执行本then中Promise的resolve使then链式调用下去
+            if (value && (typeof value === 'object' || typeof value === 'function')) {
+                let then = value.then
+                if (typeof then === 'function') {
+                    then.call(value, this._resolve.bind(this))
+                    return
+                }
+            }
+            // 将状态置为fulfilled。当增加完状态之后，原先的_resolve中的定时器可以去掉了。当reolve同步执行时，虽然callbacks为空，回调函数还没有注册上来，但没有关系，因为后面注册上来时，判断状态为fulfilled，会立即执行回调。
+            this.state = 'fulfilled'
+            this.value = value
+            this.callbacks.forEach(callback => this._handle(callback))
+        }
+        _reject(err) {
+            this.state = 'rejected'
+            this.value = err
+            this.callbacks.forEach(callback => this._handle(callback))
+        }
+        // 静态方法，只能用类调用，实例不会继承
+        static resolve(value) {
+            // 1.参数是一个Promise实例
+            // 如果参数是 Promise 实例，那么Promise.resolve将不做任何修改、原封不动地返回这个实例。
+            if (value && value instanceof Promise) {
+                return value
+            } else if (value && typeof value === 'object' && typeof value.then === 'function') {
+                // 2.参数是一个thenable对象
+                // thenable对象指的是具有then方法的对象，比如下面这个对象。
+                // Promise.resolve方法会将这个对象转为 Promise 对象，然后就立即执行thenable对象的then方法。
+                let then = value.then
+                return new Promise(resolve => {
+                    then(resolve)
+                })
+            }
+            // 3.参数不是具有then方法的对象，或根本就不是对象
+            // 如果参数是一个原始值，或者是一个不具有then方法的对象，则Promise.resolve方法返回一个新的 Promise 对象，状态为resolved。
+            if (value) {
+                return new Promise(resolve => resolve(value))
+            }
+            // 4.不带任务参数
+            // Promise.resolve方法允许调用时不带参数，直接返回一个resolved状态的 Promise 对象。
+            return new Promise(resolve => resolve())
+        }
+    }
+
+    // 实例
+    let p = new Promise( (resolve, reject) => {
+        setTimeout(() => {
+            let flag = false
+            if (flag) {
+                resolve(123)
+            } else {
+                reject('err')
+            }
+        }, 1000)
+    }).then(data => {
+        console.log(data, 'then1')
+        return 234
+    }).then().then(data => {
+        console.log(data, 'then2')
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve(345)
+            }, 5000)
+        })
+    }).then(data => {
+        console.log(data, 'then3')
+        return 456
+    }, err => {
+        console.log(err, 'reject')
+    }).then(data => {
+        console.log(data, 'then4')
+        return 567
+    }).catch(data => {
+        console.log(data, 'catch')
+    }).finally(data => {
+        console.log(data, 'finally')
+    })
+
+    setTimeout(() => {
+        p.then(data => {
+            console.log(data, 'then5')
+            return 456
+        })
+    })
+
+    setTimeout(() => {
+        p.then(data => {
+            console.log(data, 'then6')
+        })
+    }, 5000)
+
+    Promise.resolve('resolve').then(data => {
+        console.log(data)
+    })
+
+</script>
+</body>
+</html>
