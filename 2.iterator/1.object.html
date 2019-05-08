@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+
+    let obj = {
+        a: 100,
+        b: 200
+    }
+
+    // done为true时直接停止执行，iterator就不会接收value了
+    obj[Symbol.iterator] = function(){
+        let index = -1
+        let keys = Object.keys(obj)
+        return {
+            next(){
+                index++
+                return {
+                    value: obj[keys[index]],
+                    done: index === keys.length ? true : false
+                }
+            }
+        }
+    }
+
+    // obj[Symbol.iterator]().next()
+    for (let v of obj) {
+        console.log(v)
+    }
+
+</script>
+</body>
+</html>
