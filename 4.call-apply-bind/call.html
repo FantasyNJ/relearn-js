@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<script>
+    // 此场景没有考虑context为基本数据类型的情况，传入基本数据类型不会报错，但是调用this.xxx返回undefined
+    Function.prototype.call = function (context) {
+        /** 如果第一个参数传入的是 null 或者是 undefined, 那么指向 this 指向 window/global */
+        /** 如果第一个参数传入的不是 null 或者是 undefined, 那么必须是一个对象 */
+        if (!context) {
+            // 使用typeof判断即使window不存在页不会报错，如果直接判断window在node环境则会报window is not defined
+            context = typeof window === 'undefined' ? global : window
+        }
+        let restArguments = [...arguments].slice(1)
+        context._fn = this
+        let result = context._fn(...restArguments)
+        delete context._fn
+        return result
+    }
+
+    // 测试代码
+    var foo = {
+        name: 'Selina'
+    }
+    var name = 'Chirs';
+    function bar(job, age) {
+        console.log(this.name);
+        console.log(job, age);
+    }
+    bar.call(foo);
+    bar.call(foo, 'programmer', 20);
+    // Selina programmer 20
+    bar.call(null, 'teacher', 25);
+    // 浏览器环境: Chirs teacher 25; node 环境: undefined teacher 25
+
+</script>
+</body>
+</html>

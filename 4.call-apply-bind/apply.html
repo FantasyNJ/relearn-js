@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    Function.prototype.apply = function(context, arg) {
+        if (!context) {
+            context = typeof window === 'undefined' ? global : window
+        }
+        context._fn = this
+        let result = context._fn(...arg)
+        delete context._fn
+        return result
+    }
+
+    var foo = {
+        name: 'Selina'
+    }
+    var name = 'Chirs';
+    function bar(job, age) {
+        console.log(this.name);
+        console.log(job, age);
+    }
+    bar.apply(foo, ['programmer', 20]);
+    // Selina programmer 20
+    bar.apply(null, ['teacher', 25]);
+    // 浏览器环境: Chirs programmer 20; node 环境: undefined teacher 25
+</script>
+</body>
+</html>
