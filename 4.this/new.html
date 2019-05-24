@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    function anotherNew(fn) {
+        let obj = {}
+        obj.__proto__ = fn.prototype
+        let result = fn.call(obj)
+        if (typeof result === 'object' || typeof result === 'function') {
+            return result
+        }
+        return obj
+    }
+
+    function Student(name, age) {
+        this.name = '小明'
+        this.age = 12
+    }
+
+    Student.prototype.getName = function () {
+        return this.name
+    }
+
+    let xiaoming = anotherNew(Student)
+
+    console.log(xiaoming, 'xiaomingxiaoming')
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="header"></div>
+<div class="content"></div>
+<div class="footer"></div>
+
+<script src="https://cdn.bootcss.com/redux/4.0.1/redux.js"></script>
+<script>
+    let indexState = {
+        header: '1',
+        content: '2',
+        footer: '3'
+    }
+
+    const appReducer = function (state = indexState, action) {
+        switch (action.type) {
+            case 'UPDATE_HEADER':
+                return {...state, ...{ header: action.payload }}
+            case 'UPDATE_CONTENT':
+                return {...state, ...{ content: action.payload }}
+            case 'UPDATE_FOOTER':
+                return {...state, ...{ footer: action.payload }}
+            default:
+                return state
+        }
+    }
+
+    const store = Redux.createStore(appReducer)
+
+    console.log(store, store.getState())
+
+    /* 渲染 Header */
+    const renderHeader = () => {
+        console.log('render header')
+        document.querySelector('.header').innerHTML = store.getState().header
+    }
+
+
+    /* 渲染 Body */
+    const renderContent = () => {
+        console.log('render content')
+        document.querySelector('.content').innerHTML = store.getState().content
+    }
+
+
+    /* 渲染 Footer */
+    const renderFooter = () => {
+        console.log('render footer')
+        document.querySelector('.footer').innerHTML = store.getState().footer
+    }
+
+    renderHeader()
+    renderContent()
+    renderFooter()
+
+
+    setTimeout(() => {
+        store.dispatch({ type: 'UPDATE_HEADER', payload: 'New Header' })
+        store.dispatch({ type: 'UPDATE_CONTENT', payload: 'New Content' })
+        store.dispatch({ type: 'UPDATE_FOOTER', payload: 'New Footer' })
+    }, 1000)
+
+    store.subscribe(renderHeader)
+    store.subscribe(renderContent)
+    store.subscribe(renderFooter)
+
+</script>
+</body>
+</html>
